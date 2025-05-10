@@ -1,15 +1,15 @@
-import { client } from '@/lib/sanity'
-import { urlFor } from '@/lib/sanity'
+'use client'
+
+import { useState, useEffect } from 'react'
 import FadeIn from '@/components/animations/FadeIn'
 import GsapReveal from '@/components/animations/GsapReveal'
 import CaseStudyCard from '@/components/cards/CaseStudyCard'
 import TextReveal from '@/components/animations/TextReveal'
 import { Button } from '@/components/ui/Button'
 
-async function getCaseStudies() {
-  // This would fetch from Sanity when fully set up
-  // return await client.fetch(`*[_type == "caseStudy"]`)
-
+// This would be a server component in a real implementation
+// that fetches data from Sanity
+const getCaseStudies = async () => {
   // Placeholder data
   return [
     {
@@ -51,8 +51,47 @@ async function getCaseStudies() {
   ]
 }
 
-export default async function WorkPage() {
-  const caseStudies = await getCaseStudies()
+export default function WorkPage() {
+  const [caseStudies, setCaseStudies] = useState([])
+  const [filteredStudies, setFilteredStudies] = useState([])
+  const [activeFilter, setActiveFilter] = useState('All')
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Get all unique tags from case studies
+  const allTags = caseStudies.reduce((tags, study) => {
+    study.tags.forEach(tag => {
+      if (!tags.includes(tag)) {
+        tags.push(tag)
+      }
+    })
+    return tags
+  }, [])
+
+  // Load case studies on component mount
+  useEffect(() => {
+    const loadCaseStudies = async () => {
+      const studies = await getCaseStudies()
+      setCaseStudies(studies)
+      setFilteredStudies(studies)
+      setIsLoading(false)
+    }
+
+    loadCaseStudies()
+  }, [])
+
+  // Filter case studies when activeFilter changes
+  const handleFilterChange = (filter) => {
+    setActiveFilter(filter)
+
+    if (filter === 'All') {
+      setFilteredStudies(caseStudies)
+    } else {
+      const filtered = caseStudies.filter(study =>
+        study.tags.includes(filter)
+      )
+      setFilteredStudies(filtered)
+    }
+  }
 
   return (
     <div className="space-y-24">
@@ -68,29 +107,66 @@ export default async function WorkPage() {
       {/* Filter Section */}
       <section>
         <div className="flex flex-wrap gap-4 mb-12">
-          <button className="px-4 py-2 rounded-full bg-electric-blue text-white">All</button>
-          <button className="px-4 py-2 rounded-full border border-muted hover:bg-muted/20 transition-colors">Web Design</button>
-          <button className="px-4 py-2 rounded-full border border-muted hover:bg-muted/20 transition-colors">UX/UI</button>
-          <button className="px-4 py-2 rounded-full border border-muted hover:bg-muted/20 transition-colors">Development</button>
-          <button className="px-4 py-2 rounded-full border border-muted hover:bg-muted/20 transition-colors">Branding</button>
+          <button
+            className={`px-4 py-2 rounded-full transition-colors ${
+              activeFilter === 'All'
+                ? 'bg-electric-blue text-white'
+                : 'border border-muted hover:bg-muted/20'
+            }`}
+            onClick={() => handleFilterChange('All')}
+          >
+            All
+          </button>
+
+          {allTags.map(tag => (
+            <button
+              key={tag}
+              className={`px-4 py-2 rounded-full transition-colors ${
+                activeFilter === tag
+                  ? 'bg-electric-blue text-white'
+                  : 'border border-muted hover:bg-muted/20'
+              }`}
+              onClick={() => handleFilterChange(tag)}
+            >
+              {tag}
+            </button>
+          ))}
         </div>
       </section>
 
       <section>
         <GsapReveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {caseStudies.map((caseStudy, index) => (
-              <FadeIn key={caseStudy.slug.current} delay={index * 0.2}>
-                <CaseStudyCard
-                  title={caseStudy.title}
-                  slug={caseStudy.slug.current}
-                  summary={caseStudy.summary}
-                  imageUrl={caseStudy.imageUrl || '/images/placeholder.jpg'}
-                  tags={caseStudy.tags}
-                />
-              </FadeIn>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="aspect-[16/9] bg-muted animate-pulse rounded-lg"></div>
+              ))}
+            </div>
+          ) : filteredStudies.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {filteredStudies.map((caseStudy, index) => (
+                <FadeIn key={caseStudy.slug.current} delay={index * 0.2}>
+                  <CaseStudyCard
+                    title={caseStudy.title}
+                    slug={caseStudy.slug.current}
+                    summary={caseStudy.summary}
+                    imageUrl={caseStudy.imageUrl || '/images/placeholder.jpg'}
+                    tags={caseStudy.tags}
+                  />
+                </FadeIn>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-xl">No case studies found matching the selected filter.</p>
+              <button
+                className="mt-4 text-electric-blue hover:underline"
+                onClick={() => handleFilterChange('All')}
+              >
+                View all case studies
+              </button>
+            </div>
+          )}
         </GsapReveal>
       </section>
 

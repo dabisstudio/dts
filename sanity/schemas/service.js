@@ -21,29 +21,57 @@ export default {
     },
     {
       name: 'description',
-      title: 'Description',
+      title: 'Short Description',
       type: 'text',
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'fullDescription',
+      title: 'Full Description',
+      type: 'array',
+      of: [{ type: 'block' }]
     },
     {
       name: 'icon',
-      title: 'Icon',
-      type: 'image',
+      title: 'Icon Name',
+      description: 'Name of the Lucide icon to use (e.g., "code", "penTool")',
+      type: 'string'
     },
     {
-      name: 'content',
-      title: 'Content',
+      name: 'image',
+      title: 'Service Image',
+      type: 'image',
+      options: {
+        hotspot: true
+      }
+    },
+    {
+      name: 'features',
+      title: 'Service Features',
       type: 'array',
       of: [
         {
-          type: 'block'
-        },
-        {
-          type: 'image',
-          options: {
-            hotspot: true
-          }
+          type: 'object',
+          fields: [
+            {
+              name: 'title',
+              title: 'Feature Title',
+              type: 'string'
+            },
+            {
+              name: 'description',
+              title: 'Feature Description',
+              type: 'text'
+            }
+          ]
         }
       ]
+    },
+    {
+      name: 'order',
+      title: 'Display Order',
+      type: 'number',
+      description: 'Order to display this service in listings'
     }
   ]
 }
